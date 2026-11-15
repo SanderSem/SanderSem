@@ -10,6 +10,7 @@
 #   panel/v5_core_logic.yaml      ← годинник, HA/Wi-Fi/аптайм, підсвітка, вкладки, лічильники
 #   panel/v5_battery.yaml         ← NEW: акумулятор (GPIO53), % і колір для bat_label
 #   panel/v5_screen_off.yaml      ← NEW: скрипт кнопки «СОН» (вимкнути екран)
+#   panel/v5_diagnostics.yaml     ← NEW: діагностика (heap/PSRAM, IP, reset) + кнопки reboot/safe mode
 #   panel/v5_statusbar.yaml       ← статус-бар: батарея, час, вкладки, кнопка «СОН» (top_layer)
 #   panel/v5_home_page.yaml       ← сторінка «Головна»
 #   panel/v5_row_switch.yaml      ← шаблон рядка світла (include з vars)
@@ -99,6 +100,7 @@ packages:
   wled: !include panel/v5_wled_logic.yaml
   battery: !include panel/v5_battery.yaml   # NEW: потребує bat_label у v5_statusbar.yaml
   screen_off: !include panel/v5_screen_off.yaml   # NEW: кнопка «СОН» у статус-барі
+  diagnostics: !include panel/v5_diagnostics.yaml # NEW: heap/PSRAM, IP, причина reset, кнопки
   # ── синхронізація плиток з HA ──
   s_lamp1: !include { file: panel/v5_entity_logic.yaml, vars: { uid: t_lamp1, entity: "${e_lamp1}", on_text: "УВІМК", off_text: "ВИМК" } }
   s_lamp2: !include { file: panel/v5_entity_logic.yaml, vars: { uid: t_lamp2, entity: "${e_lamp2}", on_text: "УВІМК", off_text: "ВИМК" } }

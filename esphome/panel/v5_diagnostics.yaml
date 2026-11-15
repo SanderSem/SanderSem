@@ -1,0 +1,40 @@
+# ═══ panel/v5_diagnostics.yaml — діагностика і сервісні кнопки для HA ═══
+# Підключення: у packages esp32p4-panel.yaml:
+#   diagnostics: !include panel/v5_diagnostics.yaml
+# Усі сутності мають entity_category diagnostic/config, тому не засмічують основні дашборди HA.
+
+debug:
+  update_interval: 60s
+
+sensor:
+  - platform: debug
+    free:
+      name: "Heap Free"
+    block:
+      name: "Heap Largest Block"
+    psram:
+      name: "PSRAM Free"
+    loop_time:
+      name: "Loop Time"
+    cpu_frequency:
+      name: "CPU Frequency"
+
+text_sensor:
+  - platform: debug
+    reset_reason:
+      name: "Reset Reason"
+  - platform: wifi_info
+    ip_address:
+      name: "Panel IP"
+      entity_category: diagnostic
+    ssid:
+      name: "Panel SSID"
+      entity_category: diagnostic
+
+button:
+  - platform: restart
+    name: "Перезавантажити панель"
+    entity_category: config
+  - platform: safe_mode
+    name: "Panel Safe Mode"
+    entity_category: config

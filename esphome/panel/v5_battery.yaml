@@ -68,3 +68,42 @@ sensor:
               - lvgl.widget.update:
                   id: bat_label
                   text_color: c_text
+
+# ── Блимання індикатора при < 10 % (лише коли екран увімкнений) ──
+globals:
+  - id: bat_blink
+    type: bool
+    initial_value: "false"
+
+interval:
+  - interval: 600ms
+    then:
+      - if:
+          condition:
+            and:
+              - not:
+                  lvgl.is_paused:
+              - lambda: 'return id(bat_level).has_state() && id(bat_level).state < 10;'
+          then:
+            - lambda: 'id(bat_blink) = !id(bat_blink);'
+            - if:
+                condition:
+                  lambda: 'return id(bat_blink);'
+                then:
+                  - lvgl.widget.update:
+                      id: bat_label
+                      text_opa: TRANSP
+                else:
+                  - lvgl.widget.update:
+                      id: bat_label
+                      text_opa: COVER
+          else:
+            # повернути видимість, якщо блимання було зупинено посеред «погашеної» фази
+            - if:
+                condition:
+                  lambda: 'return id(bat_blink);'
+                then:
+                  - lambda: 'id(bat_blink) = false;'
+                  - lvgl.widget.update:
+                      id: bat_label
+                      text_opa: COVER
