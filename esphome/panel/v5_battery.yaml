@@ -1,15 +1,12 @@
 # ═══ panel/v5_battery.yaml — акумулятор (CN4 → дільник 68K/100K → GPIO53) ═══
 # Підключення: у esp32p4-panel.yaml, у блок packages додати:
 #   battery: !include panel/v5_battery.yaml
-# ОБОВ'ЯЗКОВО: у panel/v5_statusbar.yaml має бути віджет label з id: bat_label
-# (див. v5_battery_label_snippet.yaml), інакше compile error "Couldn't find ID 'bat_label'".
+# Мітка bat_label уже є у panel/v5_statusbar.yaml (лівий край статус-бару).
+# Кольори беруться з теми: c_text (норма) і c_alert (< 20 %) — працює в зеленій і бурштиновій.
 
 substitutions:
   bat_mult: "1.68"          # дільник 68K/100K; калібрувати мультиметром:
                             # нове = 1.68 × (V_мультиметра / V_у_HA)
-  bat_c_ok: "0x33FF66"      # >= 25 %   (підлаштувати під тему, якщо потрібно)
-  bat_c_warn: "0xFFB000"    # 10–25 %
-  bat_c_low: "0xFF3B30"     # < 10 %
 
 sensor:
   - platform: adc
@@ -62,20 +59,12 @@ sensor:
               return s;
         - if:
             condition:
-              lambda: 'return x < 10;'
+              lambda: 'return x < 20;'
             then:
               - lvgl.widget.update:
                   id: bat_label
-                  text_color: ${bat_c_low}
+                  text_color: c_alert
             else:
-              - if:
-                  condition:
-                    lambda: 'return x < 25;'
-                  then:
-                    - lvgl.widget.update:
-                        id: bat_label
-                        text_color: ${bat_c_warn}
-                  else:
-                    - lvgl.widget.update:
-                        id: bat_label
-                        text_color: ${bat_c_ok}
+              - lvgl.widget.update:
+                  id: bat_label
+                  text_color: c_text
