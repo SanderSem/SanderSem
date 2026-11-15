@@ -1,0 +1,134 @@
+# ═══ v5 «ТЕРМІНАЛ»: ретро-термінал (зелений люмінофор) ════════════════════
+# Монохромна зелена гама, прямі кути, тонкі рамки, інверсні бейджі/активні стани.
+# Червоний — лише для тривоги (немає зв'язку, слабкий Wi-Fi).
+# Шрифти: Tiny5 (піксельний: заголовки, час, великі цифри)
+#         JetBrains Mono (моно: основний текст)
+
+substitutions:
+  hx_bg: "030805"
+  hx_bg2: "06140B"
+  hx_bar: "020604"
+  hx_panel: "05100A"
+  hx_panel2: "081A0F"
+  hx_line: "2F6B43"
+  hx_line2: "17361F"
+  hx_text: "A8F0B8"
+  hx_hi: "D2FFDC"
+  hx_dim: "5E9C70"
+  hx_faint: "2E5A3C"
+  hx_inv: "8CD9A0"
+  hx_inv2: "6FBF85"
+  hx_ink: "031006"
+  hx_alert: "E5534B"
+
+color:
+  - { id: c_bg, hex: "${hx_bg}" }
+  - { id: c_bg2, hex: "${hx_bg2}" }
+  - { id: c_bar, hex: "${hx_bar}" }
+  - { id: c_panel, hex: "${hx_panel}" }
+  - { id: c_panel2, hex: "${hx_panel2}" }
+  - { id: c_line, hex: "${hx_line}" }
+  - { id: c_line2, hex: "${hx_line2}" }
+  - { id: c_text, hex: "${hx_text}" }
+  - { id: c_hi, hex: "${hx_hi}" }
+  - { id: c_dim, hex: "${hx_dim}" }
+  - { id: c_faint, hex: "${hx_faint}" }
+  - { id: c_inv, hex: "${hx_inv}" }
+  - { id: c_inv2, hex: "${hx_inv2}" }
+  - { id: c_ink, hex: "${hx_ink}" }
+  - { id: c_alert, hex: "${hx_alert}" }
+
+font:
+  # ── Tiny5: піксельний ──
+  - file: { type: gfonts, family: Tiny5, weight: 400 }
+    id: px_18
+    size: 18
+    bpp: 1
+    glyphs: &g_px [" %/:·.-–—0123456789'",
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+      "АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ"]
+  - file: { type: gfonts, family: Tiny5, weight: 400 }
+    id: px_28
+    size: 28
+    bpp: 1
+    glyphs: [" 0123456789:-–—?!>"]
+  - file: { type: gfonts, family: Tiny5, weight: 400 }
+    id: px_64
+    size: 64
+    bpp: 1
+    glyphs: ["0123456789%-–—"]
+  # ── JetBrains Mono: текст ──
+  - file: { type: gfonts, family: JetBrains Mono, weight: 500 }
+    id: mono_14
+    size: 14
+    bpp: 4
+    glyphs: &g_mono [" !\"#%&'()*+,-./0123456789:;<=>?@[]_|°·«»’–—",
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+      "АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯабвгґдеєжзиіїйклмнопрстуфхцчшщьюя",
+      "ЁЫЭЪёыэъ"]
+  - file: { type: gfonts, family: JetBrains Mono, weight: 500 }
+    id: mono_16
+    size: 16
+    bpp: 4
+    glyphs: *g_mono
+
+lvgl:
+  style_definitions:
+    # панель з тонкою рамкою і ледь помітним вертикальним градієнтом
+    - id: st_panel
+      bg_color: c_panel
+      bg_grad_color: c_panel2
+      bg_grad_dir: VER
+      bg_opa: COVER
+      radius: 0
+      border_width: 1
+      border_color: c_line
+      shadow_width: 0
+      pad_all: 0
+    # інверсний бейдж-заголовок: [СВІТЛО]
+    - id: st_badge
+      bg_color: c_inv
+      bg_opa: COVER
+      text_color: c_ink
+      text_font: px_18
+      radius: 0
+      pad_left: 6
+      pad_right: 6
+      pad_top: 2
+      pad_bottom: 0
+    # контурна кнопка: [ ВИМКНУТИ ВСЕ ]
+    - id: st_btn
+      bg_color: c_panel
+      bg_opa: TRANSP
+      border_width: 1
+      border_color: c_line
+      radius: 0
+      shadow_width: 0
+      pad_all: 0
+      text_color: c_text
+      text_font: mono_14
+      text_letter_space: 2
+    # рядок списку (плитка-рядок)
+    - id: st_row
+      bg_opa: TRANSP
+      border_width: 1
+      border_side: BOTTOM
+      border_color: c_line2
+      radius: 0
+      shadow_width: 0
+      pad_left: 2
+      pad_right: 2
+      pad_top: 0
+      pad_bottom: 0
+    # бейдж стану в рядку: увімк = інверсія
+    - id: st_state
+      text_font: mono_14
+      text_color: c_faint
+      text_letter_space: 1
+      bg_color: c_inv
+      bg_opa: TRANSP
+      radius: 0
+      pad_left: 6
+      pad_right: 6
+      pad_top: 2
+      pad_bottom: 2

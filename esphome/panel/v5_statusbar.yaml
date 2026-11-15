@@ -1,0 +1,151 @@
+# ═══ v5: статус-бар 800×44 на top_layer ══════════════════════════════════
+#  [|||..] 62%  19:15  СР 11 ЛИСТОПАДА   [ГОЛОВНА] WLED     HA:OK  WIFI -58
+obj:
+  id: statusbar
+  x: 0
+  y: 0
+  width: 800
+  height: 44
+  bg_color: c_bar
+  bg_opa: COVER
+  radius: 0
+  border_width: 1
+  border_side: BOTTOM
+  border_color: c_line
+  pad_all: 0
+  scrollable: false
+  scrollbar_mode: "OFF"
+  widgets:
+    # ── акумулятор: лівий верхній кут (оновлюється з panel/v5_battery.yaml) ──
+    - label:
+        id: bat_label
+        align: LEFT_MID
+        x: 10
+        y: 1
+        text: "[.....] --%"
+        text_font: mono_14
+        text_color: c_text
+        text_letter_space: 1
+        bg_opa: TRANSP
+        clickable: false
+    - label:
+        id: lbl_time
+        align: LEFT_MID
+        x: 128
+        y: 1
+        text: "--:--"
+        text_font: px_28
+        text_color: c_hi
+    - label:
+        id: lbl_date
+        align: LEFT_MID
+        x: 222
+        y: 1
+        text: ""
+        text_font: mono_14
+        text_color: c_dim
+        text_letter_space: 1
+
+    # ── вкладки ──
+    - button:
+        id: tab_home
+        x: 376
+        y: 7
+        width: 108
+        height: 30
+        styles: st_btn
+        checked:
+          bg_color: c_inv
+          bg_grad_color: c_inv2
+          bg_grad_dir: VER
+          bg_opa: COVER
+          border_color: c_inv
+        pressed:
+          bg_color: c_line2
+          bg_opa: COVER
+        state:
+          checked: true
+        widgets:
+          - label:
+              id: tab_home_lbl
+              align: CENTER
+              y: 1
+              text: "ГОЛОВНА"
+              text_font: px_18
+              text_color: c_dim
+              checked:
+                text_color: c_ink
+        on_click:
+          - lvgl.page.show:
+              id: page_home
+              animation: NONE
+    - button:
+        id: tab_wled
+        x: 490
+        y: 7
+        width: 86
+        height: 30
+        styles: st_btn
+        checked:
+          bg_color: c_inv
+          bg_grad_color: c_inv2
+          bg_grad_dir: VER
+          bg_opa: COVER
+          border_color: c_inv
+        pressed:
+          bg_color: c_line2
+          bg_opa: COVER
+        widgets:
+          - label:
+              id: tab_wled_lbl
+              align: CENTER
+              y: 1
+              text: "WLED"
+              text_font: px_18
+              text_color: c_dim
+              checked:
+                text_color: c_ink
+        on_click:
+          - lvgl.page.show:
+              id: page_wled
+              animation: NONE
+
+    # ── кнопка «СОН»: вимикає екран (підсвітка OFF + пауза LVGL), будиться дотиком ──
+    - button:
+        id: btn_screen_off
+        x: 584
+        y: 7
+        width: 54
+        height: 30
+        styles: st_btn
+        pressed:
+          bg_color: c_line2
+          bg_opa: COVER
+        widgets:
+          - label:
+              id: btn_screen_off_lbl
+              align: CENTER
+              y: 1
+              text: "СОН"
+              text_font: px_18
+              text_color: c_dim
+        on_click:
+          - script.execute: screen_off
+
+    # ── праворуч: HA + Wi-Fi текстом ──
+    - label:
+        id: lbl_ha
+        align: RIGHT_MID
+        x: -104
+        text: "HA:--"
+        text_font: mono_14
+        text_color: c_faint
+        text_letter_space: 1
+    - label:
+        id: lbl_wifi
+        align: RIGHT_MID
+        x: -14
+        text: "WIFI --"
+        text_font: mono_14
+        text_color: c_faint
+        text_letter_space: 1

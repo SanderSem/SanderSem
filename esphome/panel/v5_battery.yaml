@@ -1,0 +1,109 @@
+# ═══ panel/v5_battery.yaml — акумулятор (CN4 → дільник 68K/100K → GPIO53) ═══
+# Підключення: у esp32p4-panel.yaml, у блок packages додати:
+#   battery: !include panel/v5_battery.yaml
+# Мітка bat_label уже є у panel/v5_statusbar.yaml (лівий край статус-бару).
+# Кольори беруться з теми: c_text (норма) і c_alert (< 20 %) — працює в зеленій і бурштиновій.
+
+substitutions:
+  bat_mult: "1.68"          # дільник 68K/100K; калібрувати мультиметром:
+                            # нове = 1.68 × (V_мультиметра / V_у_HA)
+
+sensor:
+  - platform: adc
+    pin: GPIO53             # ADC2_CH4
+    id: bat_voltage
+    name: "Battery Voltage"
+    attenuation: 12db
+    update_interval: 5s
+    accuracy_decimals: 2
+    unit_of_measurement: "V"
+    device_class: voltage
+    entity_category: diagnostic
+    filters:
+      - multiply: ${bat_mult}
+      - sliding_window_moving_average:
+          window_size: 12   # ~60 с усереднення
+          send_every: 6     # публікація раз на ~30 с
+          send_first_at: 1  # одразу показати значення після старту
+
+  - platform: copy
+    source_id: bat_voltage
+    id: bat_level
+    name: "Battery Level"
+    unit_of_measurement: "%"
+    device_class: battery
+    state_class: measurement
+    accuracy_decimals: 0
+    filters:
+      - lambda: |-
+          // Розрядна крива Li-ion 1S (кусково-лінійна)
+          static const float V[] = {3.30f,3.50f,3.60f,3.70f,3.75f,3.80f,3.85f,3.92f,4.00f,4.08f,4.15f};
+          static const float P[] = {0,    5,    10,   20,   30,   40,   50,   60,   75,   90,   100};
+          if (isnan(x)) return {};
+          if (x <= V[0])  return 0.0f;
+          if (x >= V[10]) return 100.0f;
+          for (int i = 1; i < 11; i++)
+            if (x < V[i])
+              return P[i-1] + (x - V[i-1]) * (P[i] - P[i-1]) / (V[i] - V[i-1]);
+          return 100.0f;
+    on_value:
+      then:
+        - lvgl.label.update:
+            id: bat_label
+            text: !lambda |-
+              int p = (int) roundf(x);
+              int bars = (p + 19) / 20;               // 0..5 сегментів
+              std::string s = "[";
+              for (int i = 0; i < 5; i++) s += (i < bars) ? '|' : '.';
+              s += "] " + std::to_string(p) + "%";
+              return s;
+        - if:
+            condition:
+              lambda: 'return x < 20;'
+            then:
+              - lvgl.widget.update:
+                  id: bat_label
+                  text_color: c_alert
+            else:
+              - lvgl.widget.update:
+                  id: bat_label
+                  text_color: c_text
+
+# ── Блимання індикатора при < 10 % (лише коли екран увімкнений) ──
+globals:
+  - id: bat_blink
+    type: bool
+    initial_value: "false"
+
+interval:
+  - interval: 600ms
+    then:
+      - if:
+          condition:
+            and:
+              - not:
+                  lvgl.is_paused:
+              - lambda: 'return id(bat_level).has_state() && id(bat_level).state < 10;'
+          then:
+            - lambda: 'id(bat_blink) = !id(bat_blink);'
+            - if:
+                condition:
+                  lambda: 'return id(bat_blink);'
+                then:
+                  - lvgl.widget.update:
+                      id: bat_label
+                      text_opa: TRANSP
+                else:
+                  - lvgl.widget.update:
+                      id: bat_label
+                      text_opa: COVER
+          else:
+            # повернути видимість, якщо блимання було зупинено посеред «погашеної» фази
+            - if:
+                condition:
+                  lambda: 'return id(bat_blink);'
+                then:
+                  - lambda: 'id(bat_blink) = false;'
+                  - lvgl.widget.update:
+                      id: bat_label
+                      text_opa: COVER

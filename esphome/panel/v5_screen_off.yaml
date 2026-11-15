@@ -1,0 +1,19 @@
+# ═══ panel/v5_screen_off.yaml — кнопка «СОН»: вимкнути екран ═══
+# Підключення: у packages esp32p4-panel.yaml:
+#   screen_off: !include panel/v5_screen_off.yaml
+# Кнопка btn_screen_off живе в panel/v5_statusbar.yaml і викликає цей скрипт.
+# Поведінка така сама, як після 5 хв бездіяльності (on_idle в esp32p4-panel.yaml):
+#   на Головну → підсвітка OFF → пауза LVGL. Будить перший дотик (touchscreen.on_release).
+
+script:
+  - id: screen_off
+    mode: single
+    then:
+      - lvgl.page.show:
+          id: page_home
+          animation: NONE
+      # Пауза після короткої затримки: інакше touchscreen.on_release (того ж дотику)
+      # побачить lvgl.is_paused і одразу розбудить екран.
+      - delay: 300ms
+      - light.turn_off: backlight
+      - lvgl.pause:

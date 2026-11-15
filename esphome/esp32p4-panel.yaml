@@ -1,0 +1,232 @@
+# ═══ ESP32-P4 HA Panel v5 «ТЕРМІНАЛ» — Guition JC4880P443C (4.3" 800×480) ═══
+# Навігація: вкладки «ГОЛОВНА | WLED» у статус-барі (свайп прибрано).
+#   статус-бар живе на top_layer → видно на всіх сторінках
+#   сторінки — окремі LVGL pages (page_home, page_wled), без прокрутки
+#
+# Файли (усе в /config/esphome/):
+#   esp32p4-panel.yaml            ← цей файл: залізо + каркас UI
+#   panel/v5_theme_amber.yaml     ← тема: бурштинова (активна)
+#   panel/v5_theme.yaml           ← тема: зелена (альтернатива)
+#   panel/v5_core_logic.yaml      ← годинник, HA/Wi-Fi/аптайм, підсвітка, вкладки, лічильники
+#   panel/v5_battery.yaml         ← NEW: акумулятор (GPIO53), % і колір для bat_label
+#   panel/v5_screen_off.yaml      ← NEW: скрипт кнопки «СОН» (вимкнути екран)
+#   panel/v5_diagnostics.yaml     ← NEW: діагностика (heap/PSRAM, IP, reset) + кнопки reboot/safe mode
+#   panel/v5_statusbar.yaml       ← статус-бар: батарея, час, вкладки, кнопка «СОН» (top_layer)
+#   panel/v5_home_page.yaml       ← сторінка «Головна»
+#   panel/v5_row_switch.yaml      ← шаблон рядка світла (include з vars)
+#   panel/v5_row_auto.yaml        ← шаблон рядка автоматизації (include з vars)
+#   panel/v5_entity_logic.yaml    ← шаблон синхронізації рядка з HA (include з vars)
+#   panel/v5_wled_page.yaml       ← сторінка «WLED»
+#   panel/v5_wled_logic.yaml      ← логіка WLED
+# HA-пакети без змін: packages/ha_svitiulka_palettes.yaml, ha_svitiulka_presets.yaml
+
+substitutions:
+  # ── Сутності Home Assistant ──
+  e_lamp1: switch.lamp_lampa_1
+  e_lamp2: switch.lamp_lampa_2
+  e_proj: switch.kimnata_rele_prozhektor
+  e_lampad: switch.kimnata_rele_liampadki
+  e_wled: light.svitiulka
+  e_wled_pal: select.svitiulka_color_palette
+  e_wled_preset: select.svitiulka_preset
+  e_wled_pal_opts: sensor.svitiulka_palette_options
+  e_wled_preset_opts: sensor.svitiulka_preset_options
+  e_auto1: automation.svitlo
+  e_auto2: automation.pakalnia_avtovimknennia_bez_prisutnosti
+  # ── Підсвітка (0.0–1.0) ──
+  bl_day: "1.0"
+  bl_night: "0.35"
+  bl_dim: "0.12"
+  night_from: "22"   # з 22:00 ...
+  night_to: "7"      # ... до 07:00 — нічна яскравість
+
+esphome:
+  name: esp32p4-panel
+  friendly_name: Панель P4
+
+esp32:
+  variant: esp32p4
+  flash_size: 16MB
+  engineering_sample: true   # чип rev v1.3 (pre-v3.0) — без цього не завантажиться
+  framework:
+    type: esp-idf
+
+psram:
+  mode: hex
+  speed: 200MHz
+
+esp_ldo:
+  - channel: 3            # живлення MIPI-DSI PHY
+    voltage: 2.5V
+
+esp32_hosted:             # Wi-Fi через ESP32-C6 (SDIO)
+  variant: ESP32C6
+  reset_pin: GPIO54
+  cmd_pin: GPIO19
+  clk_pin: GPIO18
+  d0_pin: GPIO14
+  d1_pin: GPIO15
+  d2_pin: GPIO16
+  d3_pin: GPIO17
+  active_high: true
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  post_connect_roaming: false
+  ap:
+    ssid: "P4 Panel Fallback"
+
+captive_portal:
+
+logger:
+  level: INFO
+  logs:
+    lvgl: WARN
+
+api:
+  encryption:
+    key: !secret panel_api_key   # ← ключ винесено в secrets.yaml
+
+ota:
+  - platform: esphome
+
+packages:
+  # ── ТЕМА: залиш активним один рядок ──
+  # theme: !include panel/v5_theme_amber.yaml   # бурштинова (Fallout: New Vegas)
+  theme: !include panel/v5_theme.yaml       # зелена (Fallout 3/4)
+  core: !include panel/v5_core_logic.yaml
+  wled: !include panel/v5_wled_logic.yaml
+  battery: !include panel/v5_battery.yaml   # NEW: потребує bat_label у v5_statusbar.yaml
+  screen_off: !include panel/v5_screen_off.yaml   # NEW: кнопка «СОН» у статус-барі
+  diagnostics: !include panel/v5_diagnostics.yaml # NEW: heap/PSRAM, IP, причина reset, кнопки
+  # ── синхронізація плиток з HA ──
+  s_lamp1: !include { file: panel/v5_entity_logic.yaml, vars: { uid: t_lamp1, entity: "${e_lamp1}", on_text: "УВІМК", off_text: "ВИМК" } }
+  s_lamp2: !include { file: panel/v5_entity_logic.yaml, vars: { uid: t_lamp2, entity: "${e_lamp2}", on_text: "УВІМК", off_text: "ВИМК" } }
+  s_proj: !include { file: panel/v5_entity_logic.yaml, vars: { uid: t_proj, entity: "${e_proj}", on_text: "УВІМК", off_text: "ВИМК" } }
+  s_lampad: !include { file: panel/v5_entity_logic.yaml, vars: { uid: t_lampad, entity: "${e_lampad}", on_text: "УВІМК", off_text: "ВИМК" } }
+  s_auto1: !include { file: panel/v5_entity_logic.yaml, vars: { uid: t_auto1, entity: "${e_auto1}", on_text: "АКТИВНА", off_text: "ВИМК" } }
+  s_auto2: !include { file: panel/v5_entity_logic.yaml, vars: { uid: t_auto2, entity: "${e_auto2}", on_text: "АКТИВНА", off_text: "ВИМК" } }
+
+i2c:
+  id: i2c_bus
+  sda: 7
+  scl: 8
+  frequency: 400kHz
+
+output:
+  - platform: ledc
+    id: gpio_backlight_pwm
+    pin: 23
+
+light:
+  - platform: monochromatic
+    id: backlight
+    name: "Підсвітка екрана"
+    output: gpio_backlight_pwm
+    restore_mode: ALWAYS_ON   # без цього екран чорний
+    default_transition_length: 300ms
+
+display:
+  - platform: mipi_dsi
+    id: disp
+    model: JC4880P443
+
+touchscreen:
+  - platform: gt911
+    id: touch
+    i2c_id: i2c_bus
+    display: disp
+    reset_pin: GPIO3
+    # ПЕРЕВІРИТИ (не змінено): за схемою Guition RST тачскріна = GPIO22, INT = GPIO21,
+    # а GPIO3 не заведений. Можна спробувати:
+    #   reset_pin: GPIO22
+    #   interrupt_pin: GPIO21
+    on_release:
+      - if:
+          # Екран спить → перший дотик лише будить (клік по віджету не проходить)
+          condition: lvgl.is_paused
+          then:
+            - lvgl.resume:
+            - lvgl.widget.redraw:
+            - script.execute: bl_wake
+          # Екран приглушений → повертаємо яскравість (віджет при цьому спрацьовує)
+          else:
+            - if:
+                condition:
+                  lambda: return id(bl_dimmed);
+                then:
+                  - script.execute: bl_wake
+
+lvgl:
+  displays: [disp]
+  touchscreens: [touch]
+  rotation: 90
+  bg_color: c_bg
+  on_idle:
+    - timeout: 60s          # 1 хв → приглушити
+      then:
+        - script.execute: bl_dim_now
+    - timeout: 5min         # 5 хв → на Головну, підсвітка OFF, LVGL пауза
+      then:
+        - lvgl.page.show:
+            id: page_home
+            animation: NONE
+        - light.turn_off: backlight
+        - lvgl.pause:
+
+  # Статус-бар з вкладками — поверх усіх сторінок
+  top_layer:
+    widgets:
+      - !include panel/v5_statusbar.yaml
+
+  pages:
+    - id: page_home
+      bg_color: c_bg
+      bg_grad_color: c_bg2
+      bg_grad_dir: VER
+      bg_opa: COVER
+      pad_all: 0
+      scrollable: false
+      scrollbar_mode: "OFF"
+      on_load:
+        - script.execute: { id: sync_tabs, wled: false }
+      widgets:
+        - obj:
+            id: home_root
+            x: 0
+            y: 44
+            width: 800
+            height: 436
+            bg_opa: TRANSP
+            border_width: 0
+            radius: 0
+            pad_all: 0
+            scrollable: false
+            scrollbar_mode: "OFF"
+            widgets: !include panel/v5_home_page.yaml
+    - id: page_wled
+      bg_color: c_bg
+      bg_grad_color: c_bg2
+      bg_grad_dir: VER
+      bg_opa: COVER
+      pad_all: 0
+      scrollable: false
+      scrollbar_mode: "OFF"
+      on_load:
+        - script.execute: { id: sync_tabs, wled: true }
+      widgets:
+        - obj:
+            id: wled_root
+            x: 0
+            y: 44
+            width: 800
+            height: 436
+            bg_opa: TRANSP
+            border_width: 0
+            radius: 0
+            pad_all: 0
+            scrollable: false
+            scrollbar_mode: "OFF"
+            widgets: !include panel/v5_wled_page.yaml
